@@ -1,101 +1,229 @@
 ---
-###############################################################################
-# Configuration of OpenStack projects and users user environment.
+openstack_venv: "{{ ansible_facts.user_dir }}/deployment/venvs/openstack-config"
 
-# List of OpenStack domains. Format is as required by the stackhpc.os-projects
-# role.
-#openstack_domains:
+openstack_projects:
+  - "{{ openstack_compute_project }}"
 
-# List of OpenStack projects. Format is as required by the stackhpc.os-projects
-# role.
-#openstack_projects:
+openstack_compute_project:
+  name: compute
+  description: OpenStack compute project
+  project_domain: default
+  user_domain: default
+  users: "{{ openstack_compute_users }}"
+  keypairs:
+    - name: id_ed25519
+      public_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL2cjqHGRy/X+vefWl1+U+ISoWlbRo02hFDb4jwBfjN2 jack@muon
+  quotas: "{{ openstack_unlimited_quotas }}"
 
-###############################################################################
-# Configuration of networks, subnets and routers.
+openstack_compute_users:
+  - name: jackphodgkiss
+    password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          36353031613965336139373832636365663933333538346166383266613364636631663838363039
+          6632636635336463653562316335386663376261656662390a313238636466326431633436373437
+          35633635666539343033633836353866323237386336623733316163343063633635666362613031
+          6631346161336666630a386461373634383031666535633161386633613663663963636163356238
+          62306530383763613334343233626138633465656662653033303662363166356537
+    email: identity@jackhodgkiss.uk
+    roles: "{{ openstack_admin_roles }}"
 
-# List of networks in the openstack system. Format is as required by the
-# stackhpc.os-networks role.
-#openstack_networks:
+openstack_admin_roles:
+  - admin
+  - heat_stack_owner
+  - load-balancer_admin
 
-# List of routers in the openstack project. Format is as required by the
-# stackhpc.os-networks role.
-#openstack_routers:
+openstack_user_roles:
+  - member
+  - heat_stack_owner
+  - load-balancer_member
+  - observer
 
-# List of security groups in the openstack project.
-# Format is as required by the stackhpc.os-networks role.
-#openstack_security_groups:
+openstack_unlimited_quotas:
+  backup_gigabytes: -1
+  backups: -1
+  cores: -1
+  floatingip: -1
+  gigabytes: -1
+  injected_file_size: -1
+  injected_files: -1
+  instances: -1
+  key_pairs: -1
+  per_volume_gigabytes: -1
+  ram: -1
+  security_group: -1
+  security_group_rule: -1
+  snapshots: -1
+  volumes: -1
 
-# List of RBAC definitions in the openstack projct. Format is as required by the
-# stackhpc.os-networks role.
-#openstack_networks_rbac:
+openstack_flavors:
+  - "{{ openstack_flavor_m1_tiny }}"
+  - "{{ openstack_flavor_m1_small }}"
+  - "{{ openstack_flavor_m1_medium }}"
+  - "{{ openstack_flavor_m1_large }}"
+  - "{{ openstack_flavor_m1_xlarge }}"
 
-###############################################################################
-# Configuration of nova flavors.
+openstack_flavor_m1_tiny:
+  name: "m1.tiny"
+  ram: 512
+  disk: 1
+  vcpus: 1
 
-# List of nova flavors in the openstack project. Format is as required by the
-# stackhpc.os-flavors role.
-#openstack_flavors:
+openstack_flavor_m1_small:
+  name: "m1.small"
+  ram: 2048
+  disk: 40
+  vcpus: 1
 
-###############################################################################
-# Configuration of nova host aggregates.
+openstack_flavor_m1_medium:
+  name: "m1.medium"
+  ram: 4096
+  disk: 60
+  vcpus: 2
 
-# List of nova host aggregates. Format is as required by the
-# stackhpc.os_host_aggregates role.
-#openstack_host_aggregates:
+openstack_flavor_m1_large:
+  name: "m1.large"
+  ram: 8192
+  disk: 80
+  vcpus: 4
 
-###############################################################################
-# Configuration of Glance software images.
+openstack_flavor_m1_xlarge:
+  name: "m1.xlarge"
+  ram: 16384
+  disk: 100
+  vcpus: 6
 
-# List of Glance images. Format is as required by the stackhpc.os-images role.
-#openstack_images:
+openstack_images:
+  - "{{ openstack_image_cirros_0_6_2 }}"
+  - "{{ openstack_image_ubuntu_2204 }}"
+  - "{{ openstack_image_ubuntu_2304 }}"
 
-# List of Diskimage Builder (DIB) elements paths to include in image builds.
-#openstack_image_elements:
+openstack_image_cirros_0_6_2:
+  name: "Cirros-6.2"
+  type: qcow2
+  image_url: "https://github.com/cirros-dev/cirros/releases/download/0.6.2/cirros-0.6.2-x86_64-disk.img"
+  is_public: True
+  properties:
+    os_type: "linux"
+    os_distro: "cirros"
+    os_version: "0.6.2"
+    hw_rng_model: "virtio"
 
-# List of Diskimage Builder (DIB) elements Git repositories to use in image
-# builds.
-#openstack_image_git_elements:
+openstack_image_ubuntu_2204:
+  name: "Ubuntu 22.04"
+  type: qcow2
+  image_url: "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+  is_public: True
+  properties:
+    os_type: "linux"
+    os_distro: "Ubuntu"
+    os_version: "22.04"
+    hw_rng_model: "virtio"
 
-###############################################################################
-# Configuration of Magnum container clusters.
+openstack_image_ubuntu_2304:
+  name: "Ubuntu 23.04"
+  type: qcow2
+  image_url: "https://cloud-images.ubuntu.com/lunar/current/lunar-server-cloudimg-amd64.img"
+  is_public: True
+  properties:
+    os_type: "linux"
+    os_distro: "Ubuntu"
+    os_version: "23.04"
+    hw_rng_model: "virtio"
 
-# List of magnum cluster templates. Format is as required by the
-# stackhpc.os-container-clusters role.
-#openstack_container_clusters_templates:
+openstack_networks:
+  - "{{ openstack_network_external }}"
+  - "{{ openstack_network_admin_vlan }}"
+  - "{{ openstack_network_compute_vlan }}"
 
-###############################################################################
-# Configuration variables for generating new Magnum cluster template config.
+openstack_network_external_name: "external"
 
-# These variables must be defined before using the generating new cluster
-# templates - see repo README for more details.
+openstack_network_external:
+  name: "{{ openstack_network_external_name }}"
+  project: "admin"
+  provider_network_type: "vlan"
+  provider_physical_network: "physnet1"
+  provider_segmentation_id: 40
+  shared: true
+  external: true
+  subnets:
+    - "{{ openstack_subnet_external }}"
 
-# Must have at least 2 CPUs, 4GB RAM and 20GB disk
-# magnum_default_master_flavor_name:
-# magnum_default_worker_flavor_name:
+openstack_subnet_external:
+  name: "{{ openstack_network_external_name }}"
+  project: "admin"
+  cidr: "10.0.40.0/24"
+  gateway_ip: "10.0.40.254"
+  allocation_pool_start: "10.0.40.200"
+  allocation_pool_end: "10.0.40.249"
 
-# Network to create tenant cluster FIPs on
-# magnum_external_net_name:
+openstack_network_admin_vlan_name: "admin-vlan"
 
-# Provider for cluster loadbalancers (e.g. 'ovn')
-# magnum_loadbalancer_provider:
+openstack_network_admin_vlan:
+  name: "{{ openstack_network_admin_vlan_name }}"
+  project: admin
+  provider_network_type: "vlan"
+  provider_physical_network: "physnet1"
+  shared: false
+  subnets:
+    - "{{ openstack_subnet_admin_vlan }}"
 
-# Kubernetes CNI to use for cluster templates (defaults to 'calico')
-# Must be one of the options supported by capi-helm-charts, see
-# https://github.com/stackhpc/capi-helm-charts/tree/main/charts/cluster-addons#container-network-interface-cni-plugins
-# magnum_default_network_driver:
+openstack_subnet_admin_vlan:
+  name: "{{ openstack_network_admin_vlan_name }}"
+  project: admin
+  cidr: "172.20.0.0/24"
+  gateway_ip: "172.20.0.254"
+  allocation_pool_start: "172.20.0.1"
+  allocation_pool_end: "172.20.0.253"
 
-# Whether to create a master nodes loadbalancer for cluster templates (defaults to 'True')
-# magnum_master_lb_enabled:
+openstack_routers:
+  - "{{ openstack_router_admin }}"
+  - "{{ openstack_router_compute }}"
 
-# Whether to add a floating IP to the loadbalancer for cluster templates (defaults to 'True')
-# magnum_cluster_floating_ip_enabled:
+openstack_router_admin:
+  - name: admin
+    project: admin
+    interfaces:
+      - "{{ openstack_network_admin_vlan_name }}"
+    network: "{{ openstack_network_external_name }}"
 
-# List of nameservers to use for cluster templates
-# magnum_cluster_default_dns_nameservers:
+openstack_network_compute_tenant_name: "compute-tenant"
 
-# Whether generated cluster templates should be public by default (defaults to 'True')
-# magnum_cluster_templates_public:
+openstack_network_compute_vlan:
+  name: "{{ openstack_network_compute_vlan_name }}"
+  project: compute
+  provider_network_type: "vlan"
+  provider_physical_network: "physnet1"
+  shared: false
+  subnets:
+    - "{{ openstack_subnet_compute_vlan }}"
 
-###############################################################################
-# Dummy variable to allow Ansible to accept this file.
-workaround_ansible_issue_8743: yes
+openstack_subnet_compute_vlan:
+  name: "{{ openstack_network_compute_vlan_name }}"
+  project: compute
+  cidr: "10.200.0.0/24"
+  gateway_ip: "10.200.0.254"
+  allocation_pool_start: "10.200.0.1"
+  allocation_pool_end: "10.200.0.253"
+
+openstack_router_compute:
+  - name: compute
+    project: compute
+    interfaces:
+      - "{{ openstack_network_compute_vlan_name }}"
+    network: "{{ openstack_network_external_name }}"
+
+openstack_security_groups:
+  - name: default
+    project: admin
+    rules:
+      - protocol: icmp
+      - protocol: tcp
+        port_range_min: 22
+        port_range_max: 22
+  - name: default
+    project: compute
+    rules:
+      - protocol: icmp
+      - protocol: tcp
+        port_range_min: 22
+        port_range_max: 22
