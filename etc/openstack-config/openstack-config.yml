@@ -95,7 +95,7 @@ openstack_flavor_m1_xlarge:
 openstack_images:
   - "{{ openstack_image_cirros_0_6_2 }}"
   - "{{ openstack_image_ubuntu_2204 }}"
-  - "{{ openstack_image_ubuntu_2304 }}"
+  - "{{ openstack_image_ubuntu_2404 }}"
 
 openstack_image_cirros_0_6_2:
   name: "Cirros-6.2"
@@ -119,15 +119,15 @@ openstack_image_ubuntu_2204:
     os_version: "22.04"
     hw_rng_model: "virtio"
 
-openstack_image_ubuntu_2304:
-  name: "Ubuntu 23.04"
+openstack_image_ubuntu_2404:
+  name: "Ubuntu 24.04"
   type: qcow2
-  image_url: "https://cloud-images.ubuntu.com/lunar/current/lunar-server-cloudimg-amd64.img"
+  image_url: "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
   is_public: True
   properties:
     os_type: "linux"
     os_distro: "Ubuntu"
-    os_version: "23.04"
+    os_version: "24.04"
     hw_rng_model: "virtio"
 
 openstack_networks:
@@ -186,7 +186,7 @@ openstack_router_admin:
       - "{{ openstack_network_admin_vlan_name }}"
     network: "{{ openstack_network_external_name }}"
 
-openstack_network_compute_tenant_name: "compute-tenant"
+openstack_network_compute_vlan_name: "compute-vlan"
 
 openstack_network_compute_vlan:
   name: "{{ openstack_network_compute_vlan_name }}"
