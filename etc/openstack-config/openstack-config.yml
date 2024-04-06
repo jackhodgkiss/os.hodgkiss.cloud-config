@@ -92,10 +92,370 @@ openstack_flavor_m1_xlarge:
   disk: 100
   vcpus: 6
 
+# List of additional host packages.
+os_images_package_dependencies_extra:
+  # debootstrap is required to build ubuntu-minimal images.
+  - debootstrap
+
+# Drop cloud-init and stable-interface-names from default elements.
+os_images_common: enable-serial-console
+
+# Set this to true to force rebuilding images.
+os_images_force_rebuild: false
+
 openstack_images:
+  - "{{ openstack_image_ubuntu_2204_lvm }}"
+  - "{{ openstack_image_rocky_9_lvm }}"
   - "{{ openstack_image_cirros_0_6_2 }}"
   - "{{ openstack_image_ubuntu_2204 }}"
   - "{{ openstack_image_ubuntu_2404 }}"
+
+openstack_image_ubuntu_2204_lvm:
+  name: "Ubuntu-22.04-LVM"
+  type: qcow2
+  is_public: True
+  elements:
+    - "cloud-init"
+    - "cloud-init-datasources"
+    - "cloud-init-growpart"
+    - "dhcp-all-interfaces"
+    - "grub2"
+    - "lvm"
+    - "openssh-server"
+    - "ubuntu-minimal"
+    - "vm"
+  packages:
+    - apt-utils
+    - bash-completion
+    - btop
+    - curl
+    - debootstrap
+    - git
+    - iputils-ping
+    - less
+    - linux-firmware
+    - logrotate
+    - lshw
+    - man-db
+    - net-tools
+    - netbase
+    - python3-venv
+    - tmux
+    - vim
+  properties:
+    os_type: "linux"
+    os_distro: "ubuntu"
+    os_version: "jammy"
+    hw_rng_model: "virtio"
+  env:
+    DIB_RELEASE: "jammy"
+    DIB_CLOUD_INIT_DATASOURCES: "OpenStack"
+    DIB_CLOUD_INIT_GROWPART_DEVICES:
+      - /dev/vda3
+    DIB_BOOTLOADER_DEFAULT_CMDLINE: "nofb nomodeset gfxpayload=text rd.auto intremap=nosid net.ifnames=0"
+    DIB_BLOCK_DEVICE_CONFIG: |
+      - local_loop:
+          name: image0
+          size: 8GiB
+      - partitioning:
+          base: image0
+          label: gpt
+          partitions:
+            - name: ESP
+              type: 'EF00'
+              size: 128MiB
+              mkfs:
+                type: vfat
+                mount:
+                  mount_point: /boot/efi
+                  fstab:
+                    options: "defaults"
+                    fsck-passno: 2
+            - name: BSP
+              type: 'EF02'
+              size: 8MiB
+            - name: root
+              type: '8E00'
+              flags: [ boot ]
+              size: 100%
+      - lvm:
+          name: lvm
+          base: [ root ]
+          pvs:
+            - name: rootpv
+              base: root
+              options: [ "--force" ]
+          vgs:
+            - name: vg
+              base: [ "rootpv" ]
+              options: [ "--force" ]
+          lvs:
+            - name: lv_root
+              base: vg
+              size: 3.5G
+            - name: lv_tmp
+              base: vg
+              size: 0.75G
+            - name: lv_var
+              base: vg
+              size: 1G
+            - name: lv_var_tmp
+              base: vg
+              size: 1G
+            - name: lv_log
+              base: vg
+              size: 128M
+            - name: lv_audit
+              base: vg
+              size: 64M
+            - name: lv_home
+              base: vg
+              size: 0.25G
+      - mkfs:
+          name: fs_root
+          base: lv_root
+          type: ext4
+          label: "rootfs"
+          mount:
+            mount_point: /
+            fstab:
+              options: "defaults"
+              fsck-passno: 1
+      - mkfs:
+          name: fs_tmp
+          base: lv_tmp
+          type: ext4
+          label: "tmpfs"
+          mount:
+            mount_point: /tmp
+            fstab:
+              options: "rw,nosuid,nodev"
+              fsck-passno: 2
+      - mkfs:
+          name: fs_var
+          base: lv_var
+          type: ext4
+          label: "varfs"
+          mount:
+            mount_point: /var
+            fstab:
+              options: "defaults"
+              fsck-passno: 2
+      - mkfs:
+          name: fs_var_tmp
+          base: lv_var_tmp
+          type: ext4
+          label: "vartmpfs"
+          mount:
+            mount_point: /var/tmp
+            fstab:
+              options: "rw,noexec,nosuid,nodev"
+              fsck-passno: 2
+      - mkfs:
+          name: fs_log
+          base: lv_log
+          type: ext4
+          label: "logfs"
+          mount:
+            mount_point: /var/log
+            fstab:
+              options: "defaults"
+              fsck-passno: 2
+      - mkfs:
+          name: fs_audit
+          base: lv_audit
+          type: ext4
+          label: "auditfs"
+          mount:
+            mount_point: /var/log/audit
+            fstab:
+              options: "defaults"
+              fsck-passno: 2
+      - mkfs:
+          name: fs_home
+          base: lv_home
+          type: ext4
+          label: "homefs"
+          mount:
+            mount_point: /home
+            fstab:
+              options: "rw,nodev"
+              fsck-passno: 2
+
+openstack_image_rocky_9_lvm:
+  name: "Rocky-9-LVM"
+  type: qcow2
+  is_public: True
+  elements:
+    - "rocky-container"
+    - "dracut-regenerate"
+    - "cloud-init"
+    - "cloud-init-growpart"
+    - "epel"
+    - "elrepo"
+    - "selinux-permissive"
+    - "dhcp-all-interfaces"
+    - "vm"
+    - "grub2"
+    - "openssh-server"
+  packages:
+    - apt-utils
+    - bash-completion
+    - btop
+    - elrepo-release
+    - git
+    - iputils
+    - less
+    - linux-firmware
+    - logrotate
+    - lshw
+    - man-db
+    - net-tools
+    - python3
+    - tmux
+    - vim
+  properties:
+    os_type: "linux"
+    os_distro: "rocky"
+    os_version: "9"
+    hw_rng_model: "virtio"
+  env:
+    DIB_RELEASE: "9"
+    DIB_CONTAINERFILE_RUNTIME: docker
+    DIB_CONTAINERFILE_RUNTIME_ROOT: 1
+    DIB_CONTAINERFILE_NETWORK_DRIVER: host
+    DIB_CLOUD_INIT_DATASOURCES: "OpenStack"
+    DIB_CLOUD_INIT_GROWPART_DEVICES:
+      - /dev/vda3
+    DIB_BOOTLOADER_DEFAULT_CMDLINE: "nofb nomodeset gfxpayload=text rd.auto intremap=nosid net.ifnames=0"
+    DIB_BLOCK_DEVICE_CONFIG: |
+      - local_loop:
+          name: image0
+          size: 8GiB
+      - partitioning:
+          base: image0
+          label: gpt
+          partitions:
+            - name: ESP
+              type: 'EF00'
+              size: 128MiB
+              mkfs:
+                type: vfat
+                mount:
+                  mount_point: /boot/efi
+                  fstab:
+                    options: "defaults"
+                    fsck-passno: 2
+            - name: BSP
+              type: 'EF02'
+              size: 8MiB
+            - name: root
+              type: '8E00'
+              flags: [ boot ]
+              size: 100%
+      - lvm:
+          name: lvm
+          base: [ root ]
+          pvs:
+            - name: rootpv
+              base: root
+              options: [ "--force" ]
+          vgs:
+            - name: vg
+              base: [ "rootpv" ]
+              options: [ "--force" ]
+          lvs:
+            - name: lv_root
+              base: vg
+              size: 3G
+            - name: lv_tmp
+              base: vg
+              size: 0.75G
+            - name: lv_var
+              base: vg
+              size: 1G
+            - name: lv_var_tmp
+              base: vg
+              size: 1G
+            - name: lv_log
+              base: vg
+              size: 128M
+            - name: lv_audit
+              base: vg
+              size: 64M
+            - name: lv_home
+              base: vg
+              size: 0.25G
+      - mkfs:
+          name: fs_root
+          base: lv_root
+          type: ext4
+          label: "rootfs"
+          mount:
+            mount_point: /
+            fstab:
+              options: "defaults"
+              fsck-passno: 1
+      - mkfs:
+          name: fs_tmp
+          base: lv_tmp
+          type: ext4
+          label: "tmpfs"
+          mount:
+            mount_point: /tmp
+            fstab:
+              options: "rw,nosuid,nodev"
+              fsck-passno: 2
+      - mkfs:
+          name: fs_var
+          base: lv_var
+          type: ext4
+          label: "varfs"
+          mount:
+            mount_point: /var
+            fstab:
+              options: "defaults"
+              fsck-passno: 2
+      - mkfs:
+          name: fs_var_tmp
+          base: lv_var_tmp
+          type: ext4
+          label: "vartmpfs"
+          mount:
+            mount_point: /var/tmp
+            fstab:
+              options: "rw,noexec,nosuid,nodev"
+              fsck-passno: 2
+      - mkfs:
+          name: fs_log
+          base: lv_log
+          type: ext4
+          label: "logfs"
+          mount:
+            mount_point: /var/log
+            fstab:
+              options: "defaults"
+              fsck-passno: 2
+      - mkfs:
+          name: fs_audit
+          base: lv_audit
+          type: ext4
+          label: "auditfs"
+          mount:
+            mount_point: /var/log/audit
+            fstab:
+              options: "defaults"
+              fsck-passno: 2
+      - mkfs:
+          name: fs_home
+          base: lv_home
+          type: ext4
+          label: "homefs"
+          mount:
+            mount_point: /home
+            fstab:
+              options: "rw,nodev"
+              fsck-passno: 2
 
 openstack_image_cirros_0_6_2:
   name: "Cirros-6.2"
