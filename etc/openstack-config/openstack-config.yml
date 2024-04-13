@@ -61,6 +61,7 @@ openstack_flavors:
   - "{{ openstack_flavor_m1_medium }}"
   - "{{ openstack_flavor_m1_large }}"
   - "{{ openstack_flavor_m1_xlarge }}"
+  - "{{ openstack_flavor_g1_xlarge }}"
 
 openstack_flavor_m1_tiny:
   name: "m1.tiny"
@@ -91,6 +92,14 @@ openstack_flavor_m1_xlarge:
   ram: 16384
   disk: 100
   vcpus: 6
+
+openstack_flavor_g1_xlarge:
+  name: "g1.xlarge"
+  ram: 16384
+  disk: 100
+  vcpus: 6
+  extra_specs:
+    pci_passthrough:alias: "rtx-2070-super:1"
 
 # List of additional host packages.
 os_images_package_dependencies_extra:
